@@ -63,3 +63,8 @@ class Jogador:
 								    4 : False,
 								    5 : False }
 		self.sequenciaBotoes = []
+
+
+
+if __name__ == "__main__":
+	
