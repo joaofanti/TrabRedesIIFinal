@@ -43,10 +43,10 @@ class Sala:
 
     def dadosSala(self):
     	return "\nSala: " + str(self.numeroSala) +
-    		   "\nChave: " + self.chave +
+    		   "\nChave: " + str(self.chave) +
     		   "\nPlayer1 na sala: " + self.player1 +
     		   "\nPlayer2 na sala: " + self.player2 +
-    		   "\nSalas: "
+    		   "\nSalas: " + 
 
 
 

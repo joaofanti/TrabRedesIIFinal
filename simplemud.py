@@ -20,7 +20,7 @@ Some ideas for things to try adding:
 
 author: Mark Frimston - mfrimston@gmail.com
 """
-
+import socket
 import time
 
 # import the MUD server class

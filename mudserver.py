@@ -8,7 +8,7 @@ author: Mark Frimston - mfrimston@gmail.com
 """
 
 
-import socket
+from socket import *
 import select
 import time
 import sys
@@ -90,11 +90,11 @@ class MudServer(object):
         self._new_events = []
 
         # create a new tcp socket which will be used to listen for new clients
-        self._listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._listen_socket = socket(AF_INET, SOCK_RAW, IPPROTO_UDP)
 
         # set a special option on the socket which allows the port to be
         # immediately without having to wait
-        self._listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
+        self._listen_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR,
                                        1)
 
         # bind the socket to an ip address and port. Port 23 is the standard
@@ -109,7 +109,7 @@ class MudServer(object):
         self._listen_socket.setblocking(False)
 
         # start listening for connections on the socket
-        self._listen_socket.listen(1)
+        #self._listen_socket.listen(1)
 
     def update(self):
         """Checks for new players, disconnected players, and new
@@ -232,11 +232,11 @@ class MudServer(object):
 
         # 'accept' returns a new socket and address info which can be used to
         # communicate with the new client
-        joined_socket, addr = self._listen_socket.accept()
+        #joined_socket, addr = self._listen_socket.accept()
 
         # set non-blocking mode on the new socket. This means that 'send' and
         # 'recv' will return immediately without waiting
-        joined_socket.setblocking(False)
+        #joined_socket.setblocking(False)
 
         # construct a new _Client object to hold info about the newly connected
         # client. Use 'nextid' as the new client's id number
