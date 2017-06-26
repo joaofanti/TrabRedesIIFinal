@@ -13,7 +13,7 @@
 
 import socket
 
-UDP_IP = "192.168.0.28"
+UDP_IP = "10.32.170.29"
 UDP_PORT = 5005
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_UDP)
@@ -22,5 +22,5 @@ sock.bind((UDP_IP, UDP_PORT))
 while True:
 	data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
 	if(len(data) < 50):
-		print "\nReceived message:", data
-		print "\nTamanho: ", len(data)
+		print ("\nReceived message:", data)
+		print ("\nTamanho: ", len(data))

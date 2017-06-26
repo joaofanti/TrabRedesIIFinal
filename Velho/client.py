@@ -18,7 +18,7 @@
 import socket
 #from socket import *
 
-UDP_IP = "192.168.0.28"
+UDP_IP = "10.32.170.29"
 UDP_PORT = 5005
 MESSAGE = "Hello, World!"
 
