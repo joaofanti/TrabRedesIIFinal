@@ -5,24 +5,28 @@ import socket
 """
 class MudServer:
 
-    """
-        Representa um cliente conectado ao servidor
-    """
-    class _Cliente:
-        endereco = ""   # Endereco do cliente conectado
-        buffer = ""     # Mensagem recebida pelo cliente
-
-    _UDP_IP = "0.0.0.0"         # IP para abrir o socket
-    _UDP_PORT = 5005            # Porta para abrir o socket
+    # Propriedades do MUD SERVER
+    _UDP_IP = "0.0.0.0"         # IP do servidor
+    _UDP_PORT = 5005            # Porta do servidor
     _Socket = None              # Socket UDP para comunicacao com os clientes
     _Tamanho_Do_Buffer = 1024   # Tamanho dos dados recebidos no socket
     _Clientes_Conectados = {}   # Dicionario de clientes conectados
 
     # Lista de comandos
-    _CMD_NOVA_CONEXAO = "NovaConexao"
+    _CMD_NOVA_CONEXAO = "CriaConexao"
     _CMD_EXAMINAR = "Examinar"
-    # TODO: adicionar novos comandos
+    _CMD_MOVER = "Mover"
+    _CMD_PEGAR = "Pegar"
+    _CMD_LARGAR = "Largar"
+    _CMD_INVENTORIO = "Inventorio"
+    _CMD_USAR = "Usar"
+    _CMD_FALAR = "Falar"
+    _CMD_COCHICHAR = "Cochichar"
+    _CMD_AJUDA = "Ajuda"
 
+    """
+        Inicializa uma nova instancia de MUD SERVER
+    """
     def __init__(self, ip, port):
         self._UDP_IP = ip
         self._UDP_PORT = port
@@ -31,37 +35,76 @@ class MudServer:
         self._Tamanho_Do_Buffer = 1024
         self._Clientes_Conectados = {}
 
-    # Adiciona um novo cliente a lista de clientes conectados
-    def novaConexao(self, nome, endereco):
-        self._Clientes_Conectados[nome] = endereco
-        print "Novo cliente conectado: ", nome
-
-    # Escuta os dados recebidos pelo socket e executa a logica num laco infinito
+    """
+        Escuta os dados recebidos pelo socket e executa a logica num laco infinito
+    """
     def atualiza(self):
-        dados, endereco = self._Socket.recvfrom(self._Tamanho_Do_Buffer)
-        dados = dados[20:len(dados)] # Remove o header da mensagem
+        # Recebe os dados pelo socket
+        mensagem, endereco = self._Socket.recvfrom(self._Tamanho_Do_Buffer)
 
-        # Verifica cada comando
-        if (str.startswith(dados, _CMD_NOVA_CONEXAO)):
-            tamanhoDoComando = len(self._CMD_NOVA_CONEXAO) + 1
-            nome = dados[tamanhoDoComando:len(dados)]
-            # Se o endereco nao esta na lista ainda, adiciona como novo cliente (se for uma requisicao de novo cliente)
-            if (nome not in self._Clientes_Conectados):
-                endereco = endereco[0]
-                self.novaConexao(nome, endereco)
-                self._Socket.sendto("201", (endereco, self._UDP_PORT))
+        # Remove o header da mensagem
+        mensagem = mensagem[20:len(mensagem)]
+
+        # Particiona a mensagem, separando por espacos e buscando o nome do jogador que requisitou o comando
+        mensagemSplit = mensagem.split('|')
+        nomeJogador = mensagemSplit[0]
+
+        if (len(mensagemSplit) == 2):
+            mensagemSplit = mensagemSplit[1].split(' ')
+
+        mensagemParaEnviar = None
+
+        # Verifica se foi um novo pedido de conexao e realiza nova conexao se necessario
+        if (mensagemSplit[0] == self._CMD_NOVA_CONEXAO):
+            if (nomeJogador in self._Clientes_Conectados):
+                mensagemParaEnviar = "400"
             else:
+                self._Clientes_Conectados[nomeJogador] = endereco[0]
+                mensagemParaEnviar ="201"
+                print "Novo jogador conectado: ", nomeJogador, " (", endereco[0], ")"
+
+        # Se nao, verifica se jogador ja esta conectado e, caso esteja, verifica qual comando foi solicitado
+        elif (nomeJogador in self._Clientes_Conectados):
+            
+            print '[', nomeJogador, '] solicitiou o comando "', mensagemSplit[0], '"'
+            
+            mensagemParaEnviar = "400"
+
+            # Ajuda
+            if (mensagemSplit[0] == self._CMD_AJUDA):
+                mensagemParaEnviar += "Examinar [sala/objeto]\n"
+                mensagemParaEnviar += "     Retorna a descricao da sala atual (sala) ou objeto mencionado.\n"
+                mensagemParaEnviar += "     A descricao da sala tambem deve listar as salas adjacentes e suas respectivas direcoes, objetos e demais jogadores presentes no local.\n"
+                mensagemParaEnviar += "Mover [N/S/L/O]\n"
+                mensagemParaEnviar += "     O jogador deve mover-se para a direcao indicada (norte, sul, leste ou oeste).\n"
+                mensagemParaEnviar += "     Ao entrar numa nova sala, o jogo deve executar automaticamente o comando 'examinar sala', que descreve o novo ambiente ao jogador.\n"
+                mensagemParaEnviar += "Pegar [objeto]\n"
+                mensagemParaEnviar += "     O jogador coleta um objeto que esta na sala atual.\n"
+                mensagemParaEnviar += "     Alguns objetos nao podem ser coletados, como no caso de 'porta'.\n"
+                mensagemParaEnviar += "Largar [objeto]\n"
+                mensagemParaEnviar += "     O jogador larga um objeto que esta no seu inventorio, na sala atual.\n"
+                mensagemParaEnviar += "Inventorio\n"
+                mensagemParaEnviar += "     O jogo lista todos os objetos carregados atualmente pelo jogador.\n"
+                mensagemParaEnviar += "Usar [objeto] {alvo}\n"
+                mensagemParaEnviar += "     O jogador usa o objeto mencionado;\n"
+                mensagemParaEnviar += "     Em alguns casos especificos, o objeto indicado necessitara de outro (alvo) para ser ativado (ex: usar chave porta).\n"
+                mensagemParaEnviar += "Falar [texto]\n"
+                mensagemParaEnviar += "     O jogador envia um texto que sera retransmitido para todos os jogadores presentes na sala atual.\n"
+                mensagemParaEnviar += "Cochichar [texto] [jogador]\n"
+                mensagemParaEnviar += "     O jogador envia uma mensagem de texto apenas para o jogador especificado, se ambos estiverem na mesma sala.\n"
+                mensagemParaEnviar += "Ajuda\n"
+                mensagemParaEnviar += "     Lista todos os comandos possiveis do jogo.\n"
+
+        if (mensagemParaEnviar != None):
+            self._Socket.sendto(mensagemParaEnviar, endereco)
 
 # --------------------------------------------------
 
-# Metodo principal para rodar o servidor
+"""
+    Metodo principal para rodar o servidor
+"""
 if __name__ == "__main__":
-    ipDoServidor = raw_input("Insira o endereco IP do SERVIDOR: ")
-    portaDoServidor = input("Insira a porta do SERVIDOR: ")
-
-    servidor = MudServer(ipDoServidor, portaDoServidor)
-
-    print "Servidor MUD inicializado com sucesso."
-
+    servidor = MudServer(socket.gethostbyname(socket.gethostname()), 5005)
+    print "Servidor MUD inicializado com sucesso em ", servidor._UDP_IP, " [", servidor._UDP_PORT, "] "
     while True:
         servidor.atualiza()
