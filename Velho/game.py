@@ -20,7 +20,7 @@
 #   |__________|__________|                      #
 #                                                #
 ##################################################
-
+"""
 class Porta:
 	
 	def __init__(self, salaOrigem, salaDestino):
@@ -86,9 +86,5 @@ if __name__ == "__main__":
     print("\nSegue uma lista de possíveis commandos: ")
     print("\nExaminar \nMover <N/S/L/O> \nPegar <objeto> \nLargar <objeto> \nInventario \nUsar <objeto> \nFalar <texto> \nCochichar <texto> <player> \nAjuda"
 
-
-
-
-
-
+"""
 
