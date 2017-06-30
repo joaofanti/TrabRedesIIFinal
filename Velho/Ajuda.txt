@@ -1,0 +1,30 @@
+>> Examinar [sala/objeto]
+	Retorna a descricao da sala atual (sala) ou objeto mencionado.
+	A descricao da sala tambem deve listar as salas adjacentes e suas respectivas direcoes, objetos e demais jogadores presentes no local.
+
+>> Mover [N/S/L/O]
+	O jogador deve mover-se para a direcao indicada (norte, sul, leste ou oeste).
+	Ao entrar numa nova sala, o jogo deve executar automaticamente o comando 'examinar sala', que descreve o novo ambiente ao jogador.
+
+>> Pegar [objeto]
+	O jogador coleta um objeto que esta na sala atual.
+	Alguns objetos nao podem ser coletados, como no caso de 'porta'.
+
+>> Largar [objeto]
+	O jogador larga um objeto que esta no seu inventorio, na sala atual.
+
+>> Inventorio
+	O jogo lista todos os objetos carregados atualmente pelo jogador.
+
+>> Usar [objeto] {alvo}
+	O jogador usa o objeto mencionado;
+	Em alguns casos especificos, o objeto indicado necessitara de outro (alvo) para ser ativado (ex: usar chave porta).
+
+>> Falar [texto]
+	O jogador envia um texto que sera retransmitido para todos os jogadores presentes na sala atual.
+
+>> Cochichar [texto] [jogador]
+	O jogador envia uma mensagem de texto apenas para o jogador especificado, se ambos estiverem na mesma sala.
+
+>> Ajuda
+	Lista todos os comandos possiveis do jogo.

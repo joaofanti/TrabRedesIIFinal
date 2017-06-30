@@ -10,6 +10,7 @@ class Servidor(UDPConnection):
 
     # Propriedades do servidor
     ConnectedClients = {}   # Dicionario de clientes conectados
+    TextoAjuda = ""         # Texto a ser enviado como resposta da acao "Ajuda"
 
     # Lista de comandos
     _CMD_NOVA_CONEXAO = "CriaConexao"
@@ -29,6 +30,10 @@ class Servidor(UDPConnection):
     def __init__(self, ip, porta):
         self.ConnectedClients = {}
         UDPConnection.__init__(self, ip, porta, 'server')
+
+        # Le o texto para resposta do comando 'Ajuda'
+        f = open('Ajuda.txt', 'r') 
+        self.TextoAjuda = f.read() 
 
     """
         Escuta os dados recebidos pelo socket e executa a logica num laco infinito
@@ -62,29 +67,7 @@ class Servidor(UDPConnection):
                         print "Novo jogador conectado: ", idJogador, " (", endereco[0], ")"
 
                     if (comando[0] == self._CMD_AJUDA):
-                        msgToSend = " >> Examinar [sala/objeto]\n"
-                        msgToSend += "     Retorna a descricao da sala atual (sala) ou objeto mencionado.\n"
-                        msgToSend += "     A descricao da sala tambem deve listar as salas adjacentes e suas respectivas direcoes, objetos e demais jogadores presentes no local.\n"
-                        msgToSend += " >> Mover [N/S/L/O]\n"
-                        msgToSend += "     O jogador deve mover-se para a direcao indicada (norte, sul, leste ou oeste).\n"
-                        msgToSend += "     Ao entrar numa nova sala, o jogo deve executar automaticamente o comando 'examinar sala', que descreve o novo ambiente ao jogador.\n"
-                        msgToSend += " >> Pegar [objeto]\n"
-                        msgToSend += "     O jogador coleta um objeto que esta na sala atual.\n"
-                        msgToSend += "     Alguns objetos nao podem ser coletados, como no caso de 'porta'.\n"
-                        msgToSend += " >> Largar [objeto]\n"
-                        msgToSend += "     O jogador larga um objeto que esta no seu inventorio, na sala atual.\n"
-                        msgToSend += " >> Inventorio\n"
-                        msgToSend += "     O jogo lista todos os objetos carregados atualmente pelo jogador.\n"
-                        msgToSend += " >> Usar [objeto] {alvo}\n"
-                        msgToSend += "     O jogador usa o objeto mencionado;\n"
-                        msgToSend += "     Em alguns casos especificos, o objeto indicado necessitara de outro (alvo) para ser ativado (ex: usar chave porta).\n"
-                        msgToSend += " >> Falar [texto]\n"
-                        msgToSend += "     O jogador envia um texto que sera retransmitido para todos os jogadores presentes na sala atual.\n"
-                        msgToSend += " >> Cochichar [texto] [jogador]\n"
-                        msgToSend += "     O jogador envia uma mensagem de texto apenas para o jogador especificado, se ambos estiverem na mesma sala.\n"
-                        msgToSend += " >> Ajuda\n"
-                        msgToSend += "     Lista todos os comandos possiveis do jogo.\n"
-
+                        msgToSend = self.TextoAjuda
                     self.sendMsg(msgToSend, endereco[0])   
 
                 except:
