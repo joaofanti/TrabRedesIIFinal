@@ -1,16 +1,15 @@
+from time import gmtime, strftime
 import socket
+import netifaces as ni
+from udpConnection import UDPConnection
 
 """
     Representa um servidor MUD.
 """
-class MudServer:
+class Servidor(UDPConnection):
 
-    # Propriedades do MUD SERVER
-    _UDP_IP = "0.0.0.0"         # IP do servidor
-    _UDP_PORT = 5005            # Porta do servidor
-    _Socket = None              # Socket UDP para comunicacao com os clientes
-    _Tamanho_Do_Buffer = 1024   # Tamanho dos dados recebidos no socket
-    _Clientes_Conectados = {}   # Dicionario de clientes conectados
+    # Propriedades do servidor
+    ConnectedClients = {}   # Dicionario de clientes conectados
 
     # Lista de comandos
     _CMD_NOVA_CONEXAO = "CriaConexao"
@@ -27,76 +26,69 @@ class MudServer:
     """
         Inicializa uma nova instancia de MUD SERVER
     """
-    def __init__(self, ip, port):
-        self._UDP_IP = ip
-        self._UDP_PORT = port
-        self._Socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_UDP)
-        self._Socket.bind((self._UDP_IP, self._UDP_PORT))
-        self._Tamanho_Do_Buffer = 1024
-        self._Clientes_Conectados = {}
+    def __init__(self, ip, porta):
+        self.ConnectedClients = {}
+        UDPConnection.__init__(self, ip, porta, 'server')
 
     """
         Escuta os dados recebidos pelo socket e executa a logica num laco infinito
     """
     def atualiza(self):
+
         # Recebe os dados pelo socket
-        mensagem, endereco = self._Socket.recvfrom(self._Tamanho_Do_Buffer)
+        self.Buffer, endereco = self.Socket.recvfrom(self.BuffSize)
 
         # Remove o header da mensagem
-        mensagem = mensagem[20:len(mensagem)]
+        self.Buffer = self.Buffer[20:len(self.Buffer)]
+        
+        # Se a mensagem comeca com 'game' entao eh uma das mensagens do jogo
+        if (self.Buffer.startswith(self.GameID)):
 
-        # Particiona a mensagem, separando por espacos e buscando o nome do jogador que requisitou o comando
-        mensagemSplit = mensagem.split('|')
-        nomeJogador = mensagemSplit[0]
+            # Pega as informacoes da mensagem removendo o GameID
+            mensagemSplit = self.Buffer[len(self.GameID):].split('|')
+            idJogador = mensagemSplit[0]
 
-        if (len(mensagemSplit) == 2):
-            mensagemSplit = mensagemSplit[1].split(' ')
+            # Se nao for uma mensagem propria, continua o processamento
+            if (idJogador != self.ID):
+                try:
+                    # Divide a mensagem por espacos
+                    comando = mensagemSplit[1].split(' ')
+                    # Valida qual acao foi solicitada
+                    msgToSend = "A requisicao nao eh valida"
+                    print ">> O jogador ", idJogador, " solicitou o comando ", comando[0]
+                    if (comando[0] == self._CMD_NOVA_CONEXAO):
+                        self.ConnectedClients[idJogador] = endereco[0]
+                        msgToSend = "200"
+                        print "Novo jogador conectado: ", idJogador, " (", endereco[0], ")"
 
-        mensagemParaEnviar = None
+                    if (comando[0] == self._CMD_AJUDA):
+                        msgToSend = " >> Examinar [sala/objeto]\n"
+                        msgToSend += "     Retorna a descricao da sala atual (sala) ou objeto mencionado.\n"
+                        msgToSend += "     A descricao da sala tambem deve listar as salas adjacentes e suas respectivas direcoes, objetos e demais jogadores presentes no local.\n"
+                        msgToSend += " >> Mover [N/S/L/O]\n"
+                        msgToSend += "     O jogador deve mover-se para a direcao indicada (norte, sul, leste ou oeste).\n"
+                        msgToSend += "     Ao entrar numa nova sala, o jogo deve executar automaticamente o comando 'examinar sala', que descreve o novo ambiente ao jogador.\n"
+                        msgToSend += " >> Pegar [objeto]\n"
+                        msgToSend += "     O jogador coleta um objeto que esta na sala atual.\n"
+                        msgToSend += "     Alguns objetos nao podem ser coletados, como no caso de 'porta'.\n"
+                        msgToSend += " >> Largar [objeto]\n"
+                        msgToSend += "     O jogador larga um objeto que esta no seu inventorio, na sala atual.\n"
+                        msgToSend += " >> Inventorio\n"
+                        msgToSend += "     O jogo lista todos os objetos carregados atualmente pelo jogador.\n"
+                        msgToSend += " >> Usar [objeto] {alvo}\n"
+                        msgToSend += "     O jogador usa o objeto mencionado;\n"
+                        msgToSend += "     Em alguns casos especificos, o objeto indicado necessitara de outro (alvo) para ser ativado (ex: usar chave porta).\n"
+                        msgToSend += " >> Falar [texto]\n"
+                        msgToSend += "     O jogador envia um texto que sera retransmitido para todos os jogadores presentes na sala atual.\n"
+                        msgToSend += " >> Cochichar [texto] [jogador]\n"
+                        msgToSend += "     O jogador envia uma mensagem de texto apenas para o jogador especificado, se ambos estiverem na mesma sala.\n"
+                        msgToSend += " >> Ajuda\n"
+                        msgToSend += "     Lista todos os comandos possiveis do jogo.\n"
 
-        # Verifica se foi um novo pedido de conexao e realiza nova conexao se necessario
-        if (mensagemSplit[0] == self._CMD_NOVA_CONEXAO):
-            if (nomeJogador in self._Clientes_Conectados):
-                mensagemParaEnviar = "400"
-            else:
-                self._Clientes_Conectados[nomeJogador] = endereco[0]
-                mensagemParaEnviar ="201"
-                print "Novo jogador conectado: ", nomeJogador, " (", endereco[0], ")"
+                    self.sendMsg(msgToSend, endereco[0])   
 
-        # Se nao, verifica se jogador ja esta conectado e, caso esteja, verifica qual comando foi solicitado
-        elif (nomeJogador in self._Clientes_Conectados):
-            
-            print '[', nomeJogador, '] solicitiou o comando "', mensagemSplit[0], '"'
-            
-            mensagemParaEnviar = "400"
-
-            # Ajuda
-            if (mensagemSplit[0] == self._CMD_AJUDA):
-                mensagemParaEnviar += "Examinar [sala/objeto]\n"
-                mensagemParaEnviar += "     Retorna a descricao da sala atual (sala) ou objeto mencionado.\n"
-                mensagemParaEnviar += "     A descricao da sala tambem deve listar as salas adjacentes e suas respectivas direcoes, objetos e demais jogadores presentes no local.\n"
-                mensagemParaEnviar += "Mover [N/S/L/O]\n"
-                mensagemParaEnviar += "     O jogador deve mover-se para a direcao indicada (norte, sul, leste ou oeste).\n"
-                mensagemParaEnviar += "     Ao entrar numa nova sala, o jogo deve executar automaticamente o comando 'examinar sala', que descreve o novo ambiente ao jogador.\n"
-                mensagemParaEnviar += "Pegar [objeto]\n"
-                mensagemParaEnviar += "     O jogador coleta um objeto que esta na sala atual.\n"
-                mensagemParaEnviar += "     Alguns objetos nao podem ser coletados, como no caso de 'porta'.\n"
-                mensagemParaEnviar += "Largar [objeto]\n"
-                mensagemParaEnviar += "     O jogador larga um objeto que esta no seu inventorio, na sala atual.\n"
-                mensagemParaEnviar += "Inventorio\n"
-                mensagemParaEnviar += "     O jogo lista todos os objetos carregados atualmente pelo jogador.\n"
-                mensagemParaEnviar += "Usar [objeto] {alvo}\n"
-                mensagemParaEnviar += "     O jogador usa o objeto mencionado;\n"
-                mensagemParaEnviar += "     Em alguns casos especificos, o objeto indicado necessitara de outro (alvo) para ser ativado (ex: usar chave porta).\n"
-                mensagemParaEnviar += "Falar [texto]\n"
-                mensagemParaEnviar += "     O jogador envia um texto que sera retransmitido para todos os jogadores presentes na sala atual.\n"
-                mensagemParaEnviar += "Cochichar [texto] [jogador]\n"
-                mensagemParaEnviar += "     O jogador envia uma mensagem de texto apenas para o jogador especificado, se ambos estiverem na mesma sala.\n"
-                mensagemParaEnviar += "Ajuda\n"
-                mensagemParaEnviar += "     Lista todos os comandos possiveis do jogo.\n"
-
-        if (mensagemParaEnviar != None):
-            self._Socket.sendto(mensagemParaEnviar, endereco)
+                except:
+                    self.sendMsg("404", endereco[0])   
 
 # --------------------------------------------------
 
@@ -104,7 +96,24 @@ class MudServer:
     Metodo principal para rodar o servidor
 """
 if __name__ == "__main__":
-    servidor = MudServer(socket.gethostbyname(socket.gethostname()), 5005)
-    print "Servidor MUD inicializado com sucesso em ", servidor._UDP_IP, " [", servidor._UDP_PORT, "] "
+
+    # Pega o endereco IP lo (loopback) atual, geralmente 127.0.0.1
+    ip = ni.ifaddresses("lo")[ni.AF_INET][0]['addr']
+
+    # Para cada interface disponivel diferente da interface de loopback, verifica se seu endereco e IPv4 e, se for, salva-o na variavel IP
+    for interface in ni.interfaces():
+        try:
+            ifIp = ni.ifaddresses(interface)[ni.AF_INET][0]['addr']
+            if (ifIp != ip):
+                ip = ifIp
+                break
+        except:
+            continue
+
+    # Inicializa o servidor
+    servidor = Servidor(ip, 5005)
+    print "Servidor MUD inicializado com sucesso em ", servidor.IP, " [", servidor.Port, "] "
+
+    # Deixa o servidor rodando infinitamente
     while True:
         servidor.atualiza()

@@ -1,53 +1,31 @@
 import socket
+import netifaces as ni
+from udpConnection import UDPConnection
 
-class Cliente:  
+class Cliente(UDPConnection):
 
-    # Propriedades do MUD CLIENT
-    _UDP_IP = "0.0.0.0"         # IP do cliente
-    _UDP_PORT = 5006            # Porta do cliente
-    _Socket = None              # Socket UDP para comunicacao com o servidor
-    _Tamanho_Do_Buffer = 1024   # Tamanho dos dados recebidos no socket
-    _Nome = ""                  # Nome do jogador
-    _ServerIP = "0.0.0.0"       # Nome do jogador
-    _Buffer = ""                # Buffer de resposta do servidor
+    # Propriedades do cliente
+    IPServidor = "0.0.0.0"  # IP do servidor para enviar mensagens
 
     """
-        Inicializa uma nova instancia de MUD CLIENT
+        Cria uma nova instnacia de Cliente
     """
-    def __init__(self, ip, port, nome, serverIp):
-        self._UDP_IP = ip
-        self._UDP_PORT = port
-        self._Socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_UDP)
-        self._Socket.bind((self._UDP_IP, self._UDP_PORT))
-        self._Tamanho_Do_Buffer = 1024
-        self._Nome = nome
-        self._ServerIP = serverIp
+    def __init__(self, ip, porta, id, ipServer):
+
+        # Inicializa
+        self.IPServidor = ipServer
+        UDPConnection.__init__(self, ip, porta, id)
+
+        # Cria conexao com o servidor e aguarda resposta
+        self.sendMsg("CriaConexao")
+        if (self.Buffer.split('|')[1] != "200"):
+            raise Exception('Nao foi possivel conectar')
 
     """
-    	Envia mensagem para o servidor no formato '<nome>|<comando>' e aguarda ate receber uma mensagem de resposta do servidor.
-    	Entao, salva no buffer para ser analizada depois.
+        Faz sobrecarga do "sendMsg" para que sempre se aguarde uma resposta.
     """
-    def enviaMensagem(self, mensagem):
-        mensagem = self._Nome + '|' + mensagem
-        self._Socket.sendto(mensagem, (self._ServerIP, self._UDP_PORT))
-        while True:
-            self._Buffer, endereco = self._Socket.recvfrom(self._Tamanho_Do_Buffer)
-            self._Buffer = self._Buffer[20:len(self._Buffer)] # Remove o header da mensagem
-            if (endereco[0] == self._ServerIP):
-                break
-
-    """
-        Le o buffer e notifica o usuario corretamente
-    """
-    def leResposta(self):
-        if self._Buffer == "200": # OK
-            print "Comando executado com sucesso."
-        elif self._Buffer == "201": # Created
-            print "Cliente conectado com sucesso."
-        elif self._Buffer == "400": # Bad Request
-            print "Comando falhou."
-        else:
-            print self._Buffer
+    def sendMsg(self, msg):
+        super(Cliente, self).sendMsg(msg, self.IPServidor, True)
 
 # --------------------------------------------------
 
@@ -56,33 +34,51 @@ class Cliente:
 """
 if __name__ == "__main__":
 
-    # Tenta conectar o jogador no servidor ate conseguir a conexao
-    nomeJogador = ""
-    conectado = False
-    cliente = None
+    # Pega o endereco IP lo (loopback) atual, geralmente 127.0.0.1
+    ip = ni.ifaddresses("lo")[ni.AF_INET][0]['addr']
 
-    while not conectado:
-        nomeJogador = raw_input("Insira o nome do jogador: ")
+    # Para cada interface disponivel diferente da interface de loopback, verifica se seu endereco e IPv4 e, se for, salva-o na variavel IP
+    for interface in ni.interfaces():
+        try:
+            ifIp = ni.ifaddresses(interface)[ni.AF_INET][0]['addr']
+            if (ifIp != ip):
+                ip = ifIp
+                break
+        except:
+            continue
+
+    # Coleta as informacoes do jogador
+    nomeJogador = raw_input("Insira o nome do jogador: ")
+    
+    # Tenta conectar o jogador no servidor
+    cliente = None
+    while True:
         ipServidor = raw_input("Insira o endereco IP do servidor: ")
 
-        # Pega o IP do cliente pela propria maquina. Entretanto, se estiver rodando tanto o servidor como o cliente na mesma maquina,
-        # transforma o ip do cliente para localhost para poder testar
-        ipCliente = socket.gethostbyname(socket.gethostname())
-        if (ipCliente == ipServidor):
-            ipCliente = "localhost"
-        
-        cliente = Cliente(ipCliente, 5006, nomeJogador, ipServidor)
-        cliente.enviaMensagem("CriaConexao")
-        cliente.leResposta()
-        if (cliente._Buffer == "201"):
-            conectado = True
+        # Valida o endereco IP
+        try:
+            socket.inet_aton(ipServidor)
+        except socket.error:
+            print "Endereco IP nao e valido. Tente novamente.\n\n"
+            continue
+
+        try:
+            print 'Iniciando conexao com o servidor..'
+            cliente = Cliente(ip, 5006, nomeJogador, ipServidor)
+            break
+        except:
+            print "Nao foi possivel estabelecer uma conexao com o servidor. Tente novamente.\n\n"
 
     print "\n-----------------------------\n"
     print "Ola, " + nomeJogador
     print "Para jogar, digite um comando e pressione [ENTER]."
-    print "Nota: digite o comando 'Ajuda' para obter a lista de todos os comandos do jogo."
+    print "Nota: digite o comando 'Ajuda' para obter a lista de todos os comandos do jogo.\n"
 
     while True:
-        cmd = raw_input("[CMD]: ")
-        cliente.enviaMensagem(cmd)
-        cliente.leResposta()
+        msg = raw_input("[CMD]: ")
+        try:
+            cliente.sendMsg(msg)
+        except:
+            print 'Ocorreu um erro: '
+        print cliente.Buffer.split('|')[1], "\n"
+        cliente.Buffer = ""
