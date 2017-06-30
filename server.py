@@ -2,6 +2,7 @@ from time import gmtime, strftime
 import socket
 import netifaces as ni
 from udpConnection import UDPConnection
+from game import *
 
 """
     Representa um servidor MUD.
@@ -30,6 +31,8 @@ class Servidor(UDPConnection):
     def __init__(self, ip, porta):
         self.ConnectedClients = {}
         UDPConnection.__init__(self, ip, porta, 'server')
+        self.Game = Game()
+        self._Quantidade_Players = 0
 
         # Le o texto para resposta do comando 'Ajuda'
         f = open('Recursos/Ajuda.txt', 'r') 
@@ -64,10 +67,37 @@ class Servidor(UDPConnection):
                     if (comando[0] == self._CMD_NOVA_CONEXAO):
                         self.ConnectedClients[idJogador] = endereco[0]
                         msgToSend = "200"
+                        self._Quantidade_Players = self._Quantidade_Players + 1
+		                playerAux = Player(self._Quantidade_Players, 4, nomeJogador)
+		                self.Game.players.append(playerAux)
+		                self.Game.salas[3].players.append(nomeJogador)
                         print "Novo jogador conectado: ", idJogador, " (", endereco[0], ")"
 
-                    if (comando[0] == self._CMD_AJUDA):
-                        msgToSend = self.TextoAjuda
+					if (comando[0] == self._CMD_AJUDA):
+					    msgToSend = self.TextoAjuda
+					elif (comando[0] == self._CMD_EXAMINAR):
+						salaAtual = 0
+						if (len(comando) == 1):
+							for i in range(0, len(self.Game.players)):
+								if (self.Game.players[i].nome == nomeJogador):
+									salaAtual = self.Game.players[i].salaAtual
+									break
+							if (salaAtual != 0):
+								mensagemParaEnviar += self.Game.salas[salaAtual-1].dadosSala()
+					elif (comando[0] == self._CMD_MOVER):
+						pass
+					elif (comando[0] == self._CMD_PEGAR):
+						pass
+					elif (comando[0] == self._CMD_LARGAR):
+						pass
+					elif (comando[0] == self._CMD_INVENTARIO):
+						pass
+					elif (comando[0] == self._CMD_USAR):
+						pass
+					elif (comando[0] == self._CMD_FALAR):
+						pass
+					elif (comando[0] == self._CMD_COCHICHAR):
+						pass
                     self.sendMsg(msgToSend, endereco[0])   
 
                 except:

@@ -1,6 +1,7 @@
 import socket
 import netifaces as ni
 from udpConnection import UDPConnection
+from game import *
 
 class Cliente(UDPConnection):
 
