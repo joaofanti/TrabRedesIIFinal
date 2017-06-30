@@ -32,7 +32,7 @@ class Servidor(UDPConnection):
         UDPConnection.__init__(self, ip, porta, 'server')
 
         # Le o texto para resposta do comando 'Ajuda'
-        f = open('Ajuda.txt', 'r') 
+        f = open('Recursos/Ajuda.txt', 'r') 
         self.TextoAjuda = f.read() 
 
     """
