@@ -1,7 +1,10 @@
 import socket
 import netifaces as ni
-from udpConnection import UDPConnection
-from game import *
+
+import sys
+sys.path.insert(0, "Modelos")
+
+from UDPConnection import *
 
 class Cliente(UDPConnection):
 
@@ -19,8 +22,8 @@ class Cliente(UDPConnection):
 
         # Cria conexao com o servidor e aguarda resposta
         self.sendMsg("CriaConexao")
-        if (self.Buffer.split('|')[1] != "200"):
-            raise Exception('Nao foi possivel conectar')
+        if ("Jogador criado na sala inicial." not in self.Buffer):
+            raise Exception(self.Buffer.split('|')[1])
 
     """
         Faz sobrecarga do "sendMsg" para que sempre se aguarde uma resposta.

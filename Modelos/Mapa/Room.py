@@ -4,7 +4,6 @@
 class Room:
 
 	ID = 1			# Identificador da sala.
-	Players = []	# Lista dos players que estao na sala atualmente
 	Doors = []		# Lista de tuplas de [porta, direcao]
 	Objects = []	# Lista de objetos da sala
 	Initial = False	# Eh sala inicial do jogo
@@ -21,21 +20,19 @@ class Room:
 	"""
 	"""
 	def ToString(self):
-		currPlayers = ', '.join(self.Players)
-
 		currDoors = ""
 		for door in self.Doors:
-			currDoors += door.ToString()
+			currDoors += door.ToString() + "\n"
 
 		currObjects = ""
 		for roomObject in self.Objects:
-			currDoors += roomObject.ToString()
-		result = "Sala #" + self.ID
+			currObjects += roomObject.ToString() + "\n"
+		result = "Sala #" + str(self.ID)
 		if (self.Initial):
 			result += " (sala inicial)"
 		result += ":"
-		result += "\nJogadores: " + currPlayers
 		result += "\nPortas: " + currDoors
 		result += "\nObjetos: " + currObjects
 
+		print currDoors
 		return result

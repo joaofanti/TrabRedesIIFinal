@@ -1,5 +1,8 @@
+import sys
+# Adicionar o caminho do MAP FACTORY
+import MapFactory
+
 import json
-from MapFactory import MapFactory
 
 """
     Metodo principal para rodar o cliente

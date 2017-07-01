@@ -7,7 +7,7 @@ class Map(object):
 
 	Rooms = []					# Lista de salas
 	RoomDesign = ""				# Desenho da sala para usar de modelo
-	PlayerPlace = "<        >"	# Espaco onde vai ficar o texto "Jogador"
+	PlayerPlace = "PLAYER"		# Texto para escrever onde esta o jogador
 
 	"""
 		Cria uma nova instancia de Mapa
@@ -20,14 +20,13 @@ class Map(object):
 		Retorna o mapa desenhado como ASCII com a posicao do jogador, se necessario.
 	"""
 	def showMap(self, playerPositionRoomId = -1):
-		result = ""
-
-		# Pesquisa por "Sala #", onde "#" eh a o ID da sala em que o jogador esta
-		formattedRoom = "Sala " + playerPositionRoomId
-		idx = self.RoomDesign.index(formattedRoom)
-
-		if (idx > 0):
-			
+		if (playerPositionRoomId > 0):
+			return "Voce esta na sala " + str(playerPositionRoomId) + "\n" + self.RoomDesign
 		else:
-			return self.RoomDesign.replace(self.PlayerPlace, '          ')
+			return self.RoomDesign
 
+	def getRoom(self, roomId):
+		for room in self.Rooms:
+			if room.ID == roomId:
+				return room
+		return None
