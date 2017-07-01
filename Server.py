@@ -1,8 +1,9 @@
-from time import gmtime, strftime
+import json
 import socket
 import netifaces as ni
-from udpConnection import UDPConnection
 from game import *
+from time import gmtime, strftime
+from udpConnection import UDPConnection
 
 """
     Representa um servidor MUD.
@@ -33,10 +34,13 @@ class Servidor(UDPConnection):
         UDPConnection.__init__(self, ip, porta, 'server')
         self.Game = Game()
         self._Quantidade_Players = 0
-
+        
         # Le o texto para resposta do comando 'Ajuda'
-        f = open('Recursos/Ajuda.txt', 'r') 
-        self.TextoAjuda = f.read() 
+        with open('Recursos/Ajuda.txt', 'r') as data_file:
+        	self.TextoAjuda = data_file.read()
+
+    	with open('Recursos/Mapa.txt', 'r') as data_file:
+    		self.Mapa = json.load(data_file)
 
     """
         Escuta os dados recebidos pelo socket e executa a logica num laco infinito
@@ -52,34 +56,34 @@ class Servidor(UDPConnection):
         # Se a mensagem comeca com 'game' entao eh uma das mensagens do jogo
         if (self.Buffer.startswith(self.GameID)):
 
-            # Pega as informacoes da mensagem removendo o GameID
-            mensagemSplit = self.Buffer[len(self.GameID):].split('|')
-            idJogador = mensagemSplit[0]
+			# Pega as informacoes da mensagem removendo o GameID
+			mensagemSplit = self.Buffer[len(self.GameID):].split('|')
+			idJogador = mensagemSplit[0]
 
-            # Se nao for uma mensagem propria, continua o processamento
-            if (idJogador != self.ID):
-                try:
-                    # Divide a mensagem por espacos
-                    comando = mensagemSplit[1].split(' ')
-                    # Valida qual acao foi solicitada
-                    msgToSend = "A requisicao nao eh valida"
-                    print ">> O jogador ", idJogador, " solicitou o comando ", comando[0]
-                    if (comando[0] == self._CMD_NOVA_CONEXAO):
-                        self.ConnectedClients[idJogador] = endereco[0]
-                        msgToSend = "200"
-                        self._Quantidade_Players = self._Quantidade_Players + 1
-		                playerAux = Player(self._Quantidade_Players, 4, nomeJogador)
-		                self.Game.players.append(playerAux)
-		                self.Game.salas[3].players.append(nomeJogador)
-                        print "Novo jogador conectado: ", idJogador, " (", endereco[0], ")"
+			# Se nao for uma mensagem propria, continua o processamento
+			if (idJogador != self.ID):
+				try:
+					# Divide a mensagem por espacos
+					comando = mensagemSplit[1].split(' ')
+					# Valida qual acao foi solicitada
+					msgToSend = "A requisicao nao eh valida"
+					print ">> O jogador ", idJogador, " solicitou o comando ", comando[0]
+					if (comando[0] == self._CMD_NOVA_CONEXAO):
+						self.ConnectedClients[idJogador] = endereco[0]
+						msgToSend = "200"
+						self._Quantidade_Players = self._Quantidade_Players + 1
+						playerAux = Player(self._Quantidade_Players, 4, self.nomeJogador)
+						self.Game.players.append(playerAux)
+						self.Game.salas[3].players.append(self.nomeJogador)
+						print "Novo jogador conectado: ", idJogador, " (", endereco[0], ")"
 
 					if (comando[0] == self._CMD_AJUDA):
-					    msgToSend = self.TextoAjuda
+						msgToSend = self.TextoAjuda
 					elif (comando[0] == self._CMD_EXAMINAR):
 						salaAtual = 0
 						if (len(comando) == 1):
 							for i in range(0, len(self.Game.players)):
-								if (self.Game.players[i].nome == nomeJogador):
+								if (self.Game.players[i].nome == self.nomeJogador):
 									salaAtual = self.Game.players[i].salaAtual
 									break
 							if (salaAtual != 0):
@@ -98,10 +102,10 @@ class Servidor(UDPConnection):
 						pass
 					elif (comando[0] == self._CMD_COCHICHAR):
 						pass
-                    self.sendMsg(msgToSend, endereco[0])   
+					self.sendMsg(msgToSend, endereco[0])   
 
-                except:
-                    self.sendMsg("404", endereco[0])   
+				except:
+					self.sendMsg("404", endereco[0])   
 
 # --------------------------------------------------
 

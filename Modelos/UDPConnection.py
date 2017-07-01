@@ -2,6 +2,9 @@ import time
 import socket
 import netifaces as ni
 
+"""
+    Define uma conexao UDP generica.
+"""
 class UDPConnection(object):  
 
     # Propriedades
