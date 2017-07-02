@@ -16,9 +16,7 @@ class Item(object):
 		self.State = state
 
 	def ToString(self):
-		result = "[" + self.Name
+		result = self.Name
 		if (self.State):
 			result += "(" + str(self.State) + ")"
-		result += ": "
-		result +=  self.Description + "]"
 		return result

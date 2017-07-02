@@ -48,10 +48,9 @@ class Servidor(UDPConnection):
             cmdAux = msgSplit[1].split(' ')
 
             self.Cmd = cmdAux[0]
-            if (len(cmdAux) > 1):
-                self.Parameters = []
-                for parameter in cmdAux:
-                    self.Parameters.append(parameter)
+            self.Parameters = []
+            for i in range(1, len(cmdAux)):
+                self.Parameters.append(cmdAux[i])
                 
 
     """
@@ -103,6 +102,15 @@ class Servidor(UDPConnection):
                         reply = self.TextoAjuda
                     elif (cmd.Cmd == self._CMD_EXAMINAR):
                         reply = self.GameLogic.Examina(cmd.PlayerID)
+                    elif (cmd.Cmd == self._CMD_MOVER):
+                        reply = self.GameLogic.Move(cmd.PlayerID, cmd.Parameters[0])
+                    elif (cmd.Cmd == self._CMD_INVENTORIO):
+                        reply = self.GameLogic.LeInventorio(cmd.PlayerID)
+                    elif (cmd.Cmd == self._CMD_USAR):
+                        if (len(cmd.Parameters) > 1):
+                            reply = self.GameLogic.UsaItem(cmd.PlayerID, cmd.Parameters[0], cmd.Parameters[1])
+                        else:
+                            reply = self.GameLogic.UsaItem(cmd.PlayerID, cmd.Parameters[0])
                     else:
                         reply = "Comando nao eh valido."
 

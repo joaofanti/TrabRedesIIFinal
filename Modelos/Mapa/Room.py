@@ -18,6 +18,36 @@ class Room:
 		self.Objects = objects
 
 	"""
+		Retorna qual sala esta na direcao solicitada em referencia a sala atual.
+	"""
+	def GetRoomInDirection(self, direction):
+		for door in self.Doors:
+			# Se estou na primeira sala, entao deve devolver a segunda sala
+			if door.ConnectedRooms[0] == self.ID:
+				if door.DirRoom2 == direction:
+					return door.ConnectedRooms[1]
+			# Se estou na segunda sala, entao deve devolver a primeira sala
+			elif door.ConnectedRooms[1] == self.ID:
+				if door.DirRoom1 == direction:
+					return door.ConnectedRooms[0]
+		return None
+
+	"""
+		Retorna se o jogador pode mover-se para a sala na direcao.
+	"""
+	def CanMoveTo(self, direction):
+		for door in self.Doors:
+			# Se estou na primeira sala, entao deve devolver a segunda sala
+			if door.ConnectedRooms[0] == self.ID:
+				if door.DirRoom2 == direction:
+					return door.Opened
+			# Se estou na segunda sala, entao deve devolver a primeira sala
+			elif door.ConnectedRooms[1] == self.ID:
+				if door.DirRoom1 == direction:
+					return door.Opened
+		return False
+
+	"""
 	"""
 	def ToString(self):
 		currDoors = ""
@@ -34,5 +64,4 @@ class Room:
 		result += "\nPortas: " + currDoors
 		result += "\nObjetos: " + currObjects
 
-		print currDoors
 		return result

@@ -7,9 +7,11 @@ class Door:
 	"""
 		Cria uma nova instancia de Door.
 	"""
-	def __init__(self, room1, room2):
+	def __init__(self, room1, dirRoom1, room2, dirRoom2, opened):
 		self.ConnectedRooms = [room1, room2] # Quais salas ela conecta
-		self.Opened = False		# Porta esta aberta
+		self.DirRoom1 = dirRoom1 # Direcao da sala 1 em relacao a porta
+		self.DirRoom2 = dirRoom2 # Direcao da sala 2 em relacao a porta
+		self.Opened = opened	 # Porta esta aberta
 
 	"""
 		Abre a porta.
@@ -31,6 +33,7 @@ class Door:
 		if (self.Opened):
 			openedText = "aberta"
 
-		formattedRooms = ','.join(str(x) for x in self.ConnectedRooms)
+		formattedRooms = str(self.ConnectedRooms[0]) + " (" + self.DirRoom1 + ")"
+		formattedRooms += ", " + str(self.ConnectedRooms[1]) + " (" + self.DirRoom2 + ")"
 		result = "[(" + formattedRooms + "), " + openedText + "]" 
 		return result

@@ -36,8 +36,8 @@ class MapFactory:
 		currentRoomID = roomJson["ID"]
 
 		doors = []
-		for connectedRoomID in roomJson["ConnectedRoomsID"]:
-			door = self.GenerateDoor(currentRoomID, connectedRoomID)
+		for connectedRoom in roomJson["ConnectedRoomsID"]:
+			door = self.GenerateDoor(currentRoomID, connectedRoom)
 			doors.append(door)
 
 		objects = []
@@ -57,23 +57,20 @@ class MapFactory:
 	"""
 		Gera uma porta a partir de um JSON de porta ou, caso ela ja exista, utiliza a ja existente.
 	"""
-	def GenerateDoor(self, room1ID, room2ID):
-		door = self.GetDoor([room1ID, room2ID], self.DoorsList)
+	def GenerateDoor(self, room1ID, room2JSON):
 
-		# Se a porta nao existe na lista, a cria e adiciona na lista de portas
-		if (door == None):
-			door = Door(room1ID, room2ID)
-			self.DoorsList.append(door)
+		room2ID = room2JSON["Room"]
+
+		room2Direction = room2JSON["Direction"]
+		room1Direction = "N"
+		if (room2Direction == "N"):
+			room1Direction = "S"
+		elif (room2Direction == "L"):
+			room1Direction = "E"
+		elif (room2Direction == "E"):
+			room1Direction = "L"
+
+		door = Door(room1ID, room1Direction, room2ID, room2Direction, room2JSON["Opened"] == "True")
+		self.DoorsList.append(door)
 
 		return door
-
-	"""
-		Verifica se uma porta ja existe numa lista.
-		i.e: Com a lista = [(1, 2)] e a porta = (2,1) dara verdadeiro pois a porta existe.
-	"""
-	def GetDoor(self, doorJson, doorsList):
-		for doorFromList in doorsList:
-			connectedRooms = doorFromList.ConnectedRooms
-			if (((connectedRooms[0] == doorJson[0]) and (connectedRooms[1] == doorJson[1])) or ((connectedRooms[1] == doorJson[0]) and (connectedRooms[0] == doorJson[1]))):
-				return doorFromList
-		return None

@@ -8,7 +8,7 @@ import netifaces as ni
 class UDPConnection(object):  
 
     # Propriedades
-    BuffSize = 4096         # Tamanho do buffer
+    BuffSize = 100000       # Tamanho do buffer
     RespWait = 5            # Tempo de espera por uma resposta
     Buffer   = None         # Buffer que recebe a resposta
     Socket   = None         # Socket
