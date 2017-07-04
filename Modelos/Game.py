@@ -153,10 +153,12 @@ class Game:
 		Envia um texto para todos os jogadores da sala atual
 	"""
 	def Falar(self, text):
-		pass
+		return text
 
 	"""
 		Envia um texto para um jogador especifico
 	"""
 	def Cochichar(self, text, playerTarget):
-		pass
+		for x in range(0, len(self.Players)):
+			if(self.Players[x].Name == str(playerTarget)):
+				return (self.Players[x].Addr, text)
