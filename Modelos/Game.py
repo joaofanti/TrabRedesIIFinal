@@ -67,7 +67,7 @@ class Game:
 		else:
 			return "Nao ha sala nesta direcao."
 
-	def LeInventorio(self, playerId):
+	def LeInventario(self, playerId):
 		player = self.getPlayer(playerId)
 
 		result = ""
@@ -96,3 +96,67 @@ class Game:
 			if player.Name == playerName:
 				return player
 		return None
+
+	"""
+		Jogador pega um objeto que está na sala atual
+	"""
+	def Pegar(self, playerId, objeto):
+		player = self.getPlayer(playerId)
+		salaAtual = self.Map.getRoom(player.Room)
+		objetoAdicionado = False
+		for x in range(0, len(salaAtual.Objects)):
+			objetoEncontrado = salaAtual.Objects[x]
+			if(str.upper(objeto) == str.upper(objetoEncontrado.Name)):
+				objetoAdicionado = True
+				player.Inventario.append(Item(objetoEncontrado.Name, objetoEncontrado.Description))
+		if(objetoAdicionado == True):
+			return "Objeto "+str(objeto)+" adicionado ao inventario"
+		else:
+			return "Objeto "+str(objeto)+" não foi encontrado nesta sala"
+
+	"""
+		Larga objeto do inventario na sala atual
+	"""
+	def Larga(self, playerId, objeto):
+		player = self.getPlayer(playerId)
+		salaAtual = self.Map.getRoom(player.Room)
+		objetoDeletado = False
+		for x in range(0, len(player.Inventario)):
+			itemPlayer = player.Inventario[x]
+			if(itemPlayer.Name == str(objeto)):
+				objetoDeletado = True
+				del player.Inventario[x]
+				salaAtual.Objects.append(Item(itemPlayer.Name, itemPlayer.Description))
+		if(objetoDeletado == True):
+			return "Objeto "+str(objeto)+" adicionado à sala"
+		else:
+			return "Objeto "+str(objeto)+" não foi encontrado no inventário"
+
+	"""
+		Utiliza um objeto, pode ser usado em um alvo
+	"""
+	def Usar(self, playerId, object, target):
+		player = self.getPlayer(playerId)
+		objetoEncontrado = False
+		for x in range(0, len(player.Inventario)):
+			itemPlayer = player.Inventario[x]
+			if(itemPlayer.Name == str(objeto)):
+				objetoEncontrado = True
+				itemPlayer.use() 					#Implementar método para utilizar item
+		if(objetoEncontrado == True):
+			return "Objeto "+str(objeto)+" foi utilizado"
+		else:
+			return "Objeto "+str(objeto)+" não foi encontrado no inventário"
+				
+
+	"""
+		Envia um texto para todos os jogadores da sala atual
+	"""
+	def Falar(self, text):
+		pass
+
+	"""
+		Envia um texto para um jogador especifico
+	"""
+	def Cochichar(self, text, playerTarget):
+		pass
