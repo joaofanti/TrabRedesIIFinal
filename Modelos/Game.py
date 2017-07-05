@@ -18,7 +18,7 @@ class Game:
 		"""
 		def __init__(self, name, addr, map):
 			self.Name = name
-			self.Addr = addr
+			self.Addr = addr #IP
 			self.Room = 1 # Jogador sempre inicia na sala 1
 			self.Inventario = []
 			self.Inventario.append(Item("Mapa", map))
@@ -45,6 +45,8 @@ class Game:
 	"""
 	def Examina(self, playerId):
 		player = self.getPlayer(playerId)
+		if(player == None):
+			return "Player nao encontrado"
 		room = self.Map.getRoom(player.Room)
 		return room.ToString()
 
@@ -53,6 +55,8 @@ class Game:
 	"""
 	def Move(self, playerId, direction):
 		player = self.getPlayer(playerId)
+		if(player == None):
+			return "Player nao encontrado"
 		room = self.Map.getRoom(player.Room)
 		roomInDirection = room.GetRoomInDirection(direction)
 		if (roomInDirection != None):
@@ -67,9 +71,10 @@ class Game:
 		else:
 			return "Nao ha sala nesta direcao."
 
-	def LeInventario(self, playerId):
+	def Inventario(self, playerId):
 		player = self.getPlayer(playerId)
-
+		if(player == None):
+			return "Player nao encontrado"
 		result = ""
 		ln = len(player.Inventario)
 		for i in range(0, ln):
@@ -80,6 +85,8 @@ class Game:
 
 	def UsaItem(self, playerId, itemName, target = None):
 		player = self.getPlayer(playerId)
+		if(player == None):
+			return "Player nao encontrado"
 		for item in player.Inventario:
 			if item.Name == itemName:
 				if item.Name.startswith("Nota") or item.Name == "Mapa":
@@ -98,27 +105,33 @@ class Game:
 		return None
 
 	"""
-		Jogador pega um objeto que está na sala atual
+		Jogador pega um objeto que esta na sala atual
 	"""
 	def Pegar(self, playerId, objeto):
 		player = self.getPlayer(playerId)
+		if(player == None):
+			return "Player nao encontrado"
 		salaAtual = self.Map.getRoom(player.Room)
+		if(salaAtual == None):
+			return "Sala nao encontrada"
 		objetoAdicionado = False
 		for x in range(0, len(salaAtual.Objects)):
 			objetoEncontrado = salaAtual.Objects[x]
-			if(str.upper(objeto) == str.upper(objetoEncontrado.Name)):
+			if(str.upper(objeto) == str.upper(str(objetoEncontrado.Name))):
 				objetoAdicionado = True
 				player.Inventario.append(Item(objetoEncontrado.Name, objetoEncontrado.Description))
 		if(objetoAdicionado == True):
-			return "Objeto "+str(objeto)+" adicionado ao inventario"
+			return "Objeto " + objeto + " adicionado ao inventario"
 		else:
-			return "Objeto "+str(objeto)+" não foi encontrado nesta sala"
+			return "Objeto " + objeto + " nao foi encontrado nesta sala"
 
 	"""
 		Larga objeto do inventario na sala atual
 	"""
-	def Larga(self, playerId, objeto):
+	def Largar(self, playerId, objeto):
 		player = self.getPlayer(playerId)
+		if(player == None):
+			return "Player nao encontrado"
 		salaAtual = self.Map.getRoom(player.Room)
 		objetoDeletado = False
 		for x in range(0, len(player.Inventario)):
@@ -128,32 +141,9 @@ class Game:
 				del player.Inventario[x]
 				salaAtual.Objects.append(Item(itemPlayer.Name, itemPlayer.Description))
 		if(objetoDeletado == True):
-			return "Objeto "+str(objeto)+" adicionado à sala"
+			return "Objeto " + objeto + " adicionado a sala"
 		else:
-			return "Objeto "+str(objeto)+" não foi encontrado no inventário"
-
-	"""
-		Utiliza um objeto, pode ser usado em um alvo
-	"""
-	def Usar(self, playerId, object, target):
-		player = self.getPlayer(playerId)
-		objetoEncontrado = False
-		for x in range(0, len(player.Inventario)):
-			itemPlayer = player.Inventario[x]
-			if(itemPlayer.Name == str(objeto)):
-				objetoEncontrado = True
-				itemPlayer.use() 					#Implementar método para utilizar item
-		if(objetoEncontrado == True):
-			return "Objeto "+str(objeto)+" foi utilizado"
-		else:
-			return "Objeto "+str(objeto)+" não foi encontrado no inventário"
-				
-
-	"""
-		Envia um texto para todos os jogadores da sala atual
-	"""
-	def Falar(self, text):
-		return text
+			return "Objeto " + objeto + " nao foi encontrado no inventario"
 
 	"""
 		Envia um texto para um jogador especifico
@@ -162,3 +152,16 @@ class Game:
 		for x in range(0, len(self.Players)):
 			if(self.Players[x].Name == str(playerTarget)):
 				return (self.Players[x].Addr, text)
+
+	"""
+		Retorna os players presente na sala passada por parametro
+	"""
+	def getPlayersInRoom(self, room):
+		sala = self.Map.getRoom(room)
+		if(sala == None):
+			return "Sala nao encontrada"
+		playersNaSala = []
+		for x in range(0, len(self.Players)):
+			if(self.Players[x].Room == room):
+				playersNaSala.append((self.Players[x].Name, self.Players[x].Addr))
+		return playersNaSala
