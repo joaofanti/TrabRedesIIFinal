@@ -87,12 +87,16 @@ class Game:
 		player = self.getPlayer(playerId)
 		if(player == None):
 			return "Player nao encontrado"
+		salaAtual = self.Map.getRoom(player.Room)
+
 		for item in player.Inventario:
 			if item.Name == itemName:
-				if item.Name.startswith("Nota") or item.Name == "Mapa":
-					return item.Description
-				elif item.Name.startswith("Chave"):
-					return "Ainda nao implementado"
+				if ("Nota" in str(item.Name)) or item.Name == "Mapa":
+					print item.Description
+				elif ("Chave" in str(item.Name)):
+					for x in range(0, len(salaAtual.Doors)):
+						salaAtual.Doors[x].opened = True
+						return "Portas da sala "+str(salaAtual.ID)+" foram abertas" 
 				else:
 					return "Item nao existente no inventario"
 
@@ -110,11 +114,11 @@ class Game:
 		lenObjetos = len(salaAtual.Objects)
 		for x in range(0, lenObjetos):
 			objetoEncontrado = salaAtual.Objects[x]
-			print "Objeto: " + objetoEncontrado.Name
 			if(str(objeto) == str(objetoEncontrado.Name)):
 				objetoAdicionado = True
 				del salaAtual.Objects[x]
 				player.Inventario.append(Item(objetoEncontrado.Name, objetoEncontrado.Description))
+				break
 		if(objetoAdicionado == True):
 			return "Objeto " + objeto + " adicionado ao inventario"
 		else:
