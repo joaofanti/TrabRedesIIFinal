@@ -52,11 +52,11 @@ class Room:
 	def ToString(self):
 		currDoors = ""
 		for door in self.Doors:
-			currDoors += door.ToString() + "\n"
+			currDoors += door.ToString() + " - "
 
 		currObjects = ""
 		for roomObject in self.Objects:
-			currObjects += roomObject.ToString() + "\n"
+			currObjects += roomObject.ToString() + "; "
 		result = "Sala #" + str(self.ID)
 		if (self.Initial):
 			result += " (sala inicial)"
@@ -65,3 +65,4 @@ class Room:
 		result += "\nObjetos: " + currObjects
 
 		return result
+
