@@ -95,14 +95,6 @@ class Game:
 					return "Ainda nao implementado"
 				else:
 					return "Item nao existente no inventario"
-	"""
-		Busca o jogador na lista de jogadores conectados ao jogo.
-	"""
-	def getPlayer(self, playerName):
-		for player in self.Players:
-			if player.Name == playerName:
-				return player
-		return None
 
 	"""
 		Jogador pega um objeto que esta na sala atual
@@ -115,10 +107,13 @@ class Game:
 		if(salaAtual == None):
 			return "Sala nao encontrada"
 		objetoAdicionado = False
-		for x in range(0, len(salaAtual.Objects)):
+		lenObjetos = len(salaAtual.Objects)
+		for x in range(0, lenObjetos):
 			objetoEncontrado = salaAtual.Objects[x]
-			if(str.upper(objeto) == str.upper(str(objetoEncontrado.Name))):
+			print "Objeto: " + objetoEncontrado.Name
+			if(str(objeto) == str(objetoEncontrado.Name)):
 				objetoAdicionado = True
+				del salaAtual.Objects[x]
 				player.Inventario.append(Item(objetoEncontrado.Name, objetoEncontrado.Description))
 		if(objetoAdicionado == True):
 			return "Objeto " + objeto + " adicionado ao inventario"
@@ -148,7 +143,8 @@ class Game:
 	"""
 		Envia um texto para um jogador especifico
 	"""
-	def Cochichar(self, text, playerTarget):
+	def Cochichar(self, playerSource, text, playerTarget):
+		player = self.getPlayer(playerSource)
 		for x in range(0, len(self.Players)):
 			if(self.Players[x].Name == str(playerTarget)):
 				return (self.Players[x].Addr, text)
@@ -165,3 +161,13 @@ class Game:
 			if(self.Players[x].Room == room):
 				playersNaSala.append((self.Players[x].Name, self.Players[x].Addr))
 		return playersNaSala
+
+	"""
+		Busca o jogador na lista de jogadores conectados ao jogo.
+	"""
+	def getPlayer(self, playerName):
+		for player in self.Players:
+			if player.Name == playerName:
+				return player
+		return None
+

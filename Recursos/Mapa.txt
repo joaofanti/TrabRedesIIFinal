@@ -26,7 +26,7 @@
                 },
                 {
                     "Name": "Nota3",
-                    "Description": "Aqui existe o botao."
+                    "Description": "É necessário apertar o botão para para que a chave seja liberada"
                 }
         ]
     },
@@ -34,18 +34,37 @@
 	    "ID": 3,
 	    "ConnectedRoomsID": [{"Room": 2, "Direction": "W", "Opened": "True"}, {"Room": 4, "Direction": "S", "Opened": "True"}],
 	    "StartRoom": false,
-	    "Objects": []
+	    "Objects": [
+                 {
+                    "Name": "Nota4",
+                    "Description": "A chave se encontra na próxima sala, a sala final é a sala 5"
+                 }
+        ]
     },
     {
 	    "ID": 4,
-	    "ConnectedRoomsID": [{"Room": 3, "Direction": "N", "Opened": "True"}, {"Room": 5, "Direction": "W", "Opened": "True"}],
+	    "ConnectedRoomsID": [{"Room": 3, "Direction": "N", "Opened": "True"}, {"Room": 5, "Direction": "W", "Opened": "False"}],
 	    "StartRoom": false,
-	    "Objects": []
+	    "Objects": [
+                 {
+                    "Name": "Nota5",
+                    "Description": "Para abrir a sala final o jogador deve ter pressionado o botao e conter a chave"
+                 },
+                 {
+                    "Name": "Chave",
+                    "Description": "Chave para a sala final"
+                 }
+        ]
     },
     {
 	    "ID": 5,
-	    "ConnectedRoomsID": [{"Room": 4, "Direction": "E", "Opened": "True"}],
+	    "ConnectedRoomsID": [{"Room": 4, "Direction": "E", "Opened": "False"}],
 	    "StartRoom": false,
-	    "Objects": []
+	    "Objects": [
+                 {
+                    "Name" : "ObjetoFinal",
+                    "Description" : "Utilizar este objeto na sala inicial"
+                 }
+        ]
     }
 ]
