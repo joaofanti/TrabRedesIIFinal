@@ -70,3 +70,13 @@ if __name__ == "__main__":
 	game.CriaJogador("Santos", "127.0.0.1")
 	game.CriaJogador("Gui", "127.0.0.1")
 	print game.getPlayersInRoom(1)
+
+	#Teste 8 - usaItem()
+	print "----- Usa Item -----"
+	game = Game(generatedMap)
+	game.CriaJogador("Joao", "127.0.0.1")
+	print game.Move("Joao", "S")
+	print game.Move("Joao", "E")
+	print game.Move("Joao", "S")
+	print game.Pegar("Joao", "Chave")
+	print game.UsaItem("Joao", "Chave")
