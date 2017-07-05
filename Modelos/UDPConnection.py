@@ -11,14 +11,19 @@ class UDPConnection(object):
         Inicializa uma nova instancia de UDPConnection
     """
     def __init__(self, mac, ip, port, interface):
-        self.MAC    = mac
-        self.IP     = ip
-        self.Port   = port
-        self.Interface = interface
-        self.GameID = "game"
+        self.MAC        = mac
+        self.IP         = ip
+        self.Port       = port
+        self.Interface  = interface
+        self.GameID     = "game"
 
         # Abre o socket raw
-        self.Socket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.ntohs(0x0003))
+        self.SocketRcv = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.ntohs(0x0003))
+        self.SocketSnd = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.ntohs(0x0003))
+
+    # Retorna a mensagem no formato correto
+    def createMsg(self, _id, msg):
+        return '{}-{}|{}'.format(self.GameID, _id, msg)
 
     # Converte o endereco MAC
     def eth_addr(self, a) :
@@ -123,7 +128,7 @@ class UDPConnection(object):
     def sendMsg(self, dstMac, dstIp, dstPort, msg):
         # Envia o pacote ao IP destino.
         pct = self.buildFullPack(dstMac, dstIp, dstPort, msg)
-        return self.Socket.sendto(pct, (self.Interface, 0))
+        return self.SocketSnd.sendto(pct, (self.Interface, 0))
 
     """
         Le mensagem do socket (descompacta cada campo e valida se eh uma mensagem do jogo, se for, retorna a mensagem).
@@ -131,7 +136,7 @@ class UDPConnection(object):
     def readMsg(self):
 
         # Recebe a mensagem
-        packet = self.Socket.recvfrom(2048)
+        packet = self.SocketRcv.recvfrom(2048)
         packet = packet[0]
 
         # Faz o parse do Ethernet

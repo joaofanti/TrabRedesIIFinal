@@ -1,35 +1,44 @@
 import socket
+import thread
 import netifaces as ni
 
 import sys
 sys.path.insert(0, "Modelos")
-
 from UDPConnection import *
 
-class Cliente(UDPConnection):
-
-    # Propriedades do cliente
-    IPServidor = "0.0.0.0"  # IP do servidor para enviar mensagens
-
-    """
-        Cria uma nova instnacia de Cliente
-    """
-    def __init__(self, ip, porta, id, ipServer):
-
-        # Inicializa
-        self.IPServidor = ipServer
-        UDPConnection.__init__(self, ip, porta, id)
-
-        # Cria conexao com o servidor e aguarda resposta
-        self.sendMsg("CriaConexao")
-        if ("Jogador criado na sala inicial." not in self.Buffer):
-            raise Exception(self.Buffer.split('|')[1])
+"""
+    Representa um cliente do servidor MUD.
+"""
+class Client(UDPConnection):
 
     """
-        Faz sobrecarga do "sendMsg" para que sempre se aguarde uma resposta.
+        Cria uma nova instancia de Client
     """
-    def sendMsg(self, msg):
-        super(Cliente, self).sendMsg(msg, self.IPServidor, True)
+    def __init__(self,  mac, ip, port, interface, _id, serverIp):
+
+        UDPConnection.__init__(self, mac, ip, port, interface)
+
+        self.ID = _id
+        self.ServerIP = serverIp
+        self.ServerPort = 5005
+
+        thread.start_new_thread(self.readLoop, ()) # Inicia a thread de leitura
+
+        # Manda mensagem de conexao
+        connectionMsg = self.createMsg(self.ID, 'CriaConexao')
+        self.sendMsg(None, serverIp, self.ServerPort, connectionMsg)
+
+
+    """
+        Escuta os dados recebidos pelo socket e executa a logica num laco infinito
+    """
+    def readLoop(self):
+        while True:
+            rcvMsg = self.readMsg()
+            if (rcvMsg != None):
+                print '[SERVER]: {}'.format(rcvMsg["message"].split('|')[1])
+
+
 
 # --------------------------------------------------
 
@@ -52,37 +61,30 @@ if __name__ == "__main__":
             continue
 
     # Coleta as informacoes do jogador
-    nomeJogador = raw_input("Insira o nome do jogador: ")
+    port = input("Insira a porta para ser utilizada no socket (sugestao: 5006): ")
+    playerName = raw_input("Insira o nome do jogador: ")
     
     # Tenta conectar o jogador no servidor
-    cliente = None
+    client = None
     while True:
-        ipServidor = raw_input("Insira o endereco IP do servidor: ")
+        serverIp = raw_input("Insira o endereco IP do servidor: ")
 
         # Valida o endereco IP
         try:
-            socket.inet_aton(ipServidor)
+            socket.inet_aton(serverIp)
         except socket.error:
             print "Endereco IP nao e valido. Tente novamente.\n\n"
             continue
 
         try:
-            print 'Iniciando conexao com o servidor..'
-            cliente = Cliente(ip, 5006, nomeJogador, ipServidor)
+            print 'Iniciando conexao com o servidor..\n'
+            client = Client(None, ip, port, interface, playerName, serverIp)
             break
-        except:
-            print "Nao foi possivel estabelecer uma conexao com o servidor. Tente novamente.\n\n"
-
-    print "\n-----------------------------\n"
-    print "Ola, " + nomeJogador
-    print "Para jogar, digite um comando e pressione [ENTER]."
-    print "Nota: digite o comando 'Ajuda' para obter a lista de todos os comandos do jogo.\n"
+        except Exception as ex:
+            print ex
+            print "Nao foi possivel estabelecer uma conexao com o servidor. Tente novamente.\n"
 
     while True:
-        msg = raw_input("[CMD]: ")
-        try:
-            cliente.sendMsg(msg)
-        except:
-            print 'Ocorreu um erro: '
-        print cliente.Buffer.split('|')[1], "\n"
-        cliente.Buffer = ""
+        msg = raw_input()
+        msg = client.createMsg(client.ID, msg)
+        client.sendMsg(None, client.ServerIP, client.ServerPort, msg)

@@ -1,36 +1,26 @@
-import json
-import socket
+import re
 import netifaces as ni
 
 import sys
 sys.path.insert(0, "Modelos")
-sys.path.insert(0, "Modelos/Mapa")
-
-from Game import *
-from MapFactory import *
 from UDPConnection import *
-from time import gmtime, strftime
 
 """
     Representa um servidor MUD.
 """
-class Servidor(UDPConnection):
-
-    # Propriedades do servidor
-    ConnectedClients = {}   # Dicionario de clientes conectados
-    TextoAjuda = ""         # Texto a ser enviado como resposta da acao "Ajuda"
+class Server(UDPConnection):
 
     # Lista de comandos
-    _CMD_NOVA_CONEXAO = "CriaConexao"
-    _CMD_EXAMINAR = "Examinar"
-    _CMD_MOVER = "Mover"
-    _CMD_PEGAR = "Pegar"
-    _CMD_LARGAR = "Largar"
-    _CMD_INVENTORIO = "Inventorio"
-    _CMD_USAR = "Usar"
-    _CMD_FALAR = "Falar"
-    _CMD_COCHICHAR = "Cochichar"
-    _CMD_AJUDA = "Ajuda"
+    _CMD_CRIA_CONEXAO	= "CriaConexao"
+    _CMD_INVENTORIO 	= "Inventorio"
+    _CMD_COCHICHAR		= "Cochichar"
+    _CMD_EXAMINAR		= "Examinar"
+    _CMD_LARGAR			= "Largar"
+    _CMD_FALAR			= "Falar"
+    _CMD_MOVER			= "Mover"
+    _CMD_PEGAR			= "Pegar"
+    _CMD_AJUDA 			= "Ajuda"
+    _CMD_USAR			= "Usar"
 
     """
         Define um comando.
@@ -41,84 +31,55 @@ class Servidor(UDPConnection):
             Cria uma nova instancia de comando a partir da mensagem "<playerId>|<cmd> {parameters}"
         """
         def __init__(self, msg):
+			msg = re.findall(r"[\w']+", msg)
 
-            msgSplit = msg.split('|')
+			self.GameID	= msg[0]
+			self.PlayerID = msg[1]
+			self.Action = msg[2]
+			self.Parameters = []
 
-            self.PlayerID = msgSplit[0]
-            cmdAux = msgSplit[1].split(' ')
-
-            self.Cmd = cmdAux[0]
-            self.Parameters = []
-            for i in range(1, len(cmdAux)):
-                self.Parameters.append(cmdAux[i])
+			if (len(msg) > 3):
+				for i in range(3, len(msg)):
+					self.Parameters.append(msg[i])
                 
 
     """
-        Inicializa uma nova instancia de MUD SERVER
+        Inicializa uma nova instancia de Server
     """
-    def __init__(self, ip, porta):
-        self.ConnectedClients = {}
-        UDPConnection.__init__(self, ip, porta, 'server')
-        self._Quantidade_Players = 0
-        
+    def __init__(self,  mac, ip, port, interface):
+        UDPConnection.__init__(self, mac, ip, port, interface)
+        self.ID = 'server'
+
         # Le o texto para resposta do comando 'Ajuda'
         with open('Recursos/Ajuda.txt', 'r') as data_file:
-        	self.TextoAjuda = data_file.read()
-
-        fct = MapFactory()
-    	with open('Recursos/Mapa.txt', 'r') as data_file:
-            jsonFormatted = json.load(data_file)
-            with open('Recursos/MapaDesign.txt', 'r') as mapDesign:
-                generatedMap = fct.GenerateMap(jsonFormatted, mapDesign.read())
-                self.GameLogic = Game(generatedMap)
+            self.TextoAjuda = data_file.read()
 
     """
         Escuta os dados recebidos pelo socket e executa a logica num laco infinito
     """
-    def atualiza(self):
+    def run(self):
+    	while True:
+            rcvMsg = self.readMsg()
+            if (rcvMsg != None):
+                cmd = self.Command(rcvMsg["message"])
+                if (len(cmd.Parameters) > 0):
+                    print '>> O jogador {} solicitou o comando {} {}'.format(cmd.PlayerID, cmd.Action, ' '.join(cmd.Parameters))
+                else:
+                    print '>> O jogador {} solicitou o comando {}'.format(cmd.PlayerID, cmd.Action)
 
-        # Recebe os dados pelo socket
-        self.Buffer, endereco = self.Socket.recvfrom(self.BuffSize)
+                if (cmd.Action == self._CMD_CRIA_CONEXAO):
+                    connectionMsg = self.createMsg(self.ID, 'Ola, {}\n'.format(cmd.PlayerID))
+                    connectionMsg += 'Para jogar, escreva o comando desejado e tecle [ENTER]\n'
+                    connectionMsg += 'Escreva o comando "Ajuda" para obter a lista completa de comandos.\n'
+                    self.sendMsg(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"], connectionMsg)
 
-        # Remove o header da mensagem. TODO: Verificar por que tem que fazer isso.
-        self.Buffer = self.Buffer[20:len(self.Buffer)]
-        
-        # Se a mensagem comeca com 'game' entao eh uma das mensagens do jogo
-        if (self.Buffer.startswith(self.GameID)):
-            self.Buffer = self.Buffer[len(self.GameID):]
+                elif (cmd.Action == self._CMD_AJUDA):
+                    connectionMsg = self.createMsg(self.ID, self.TextoAjuda)
+                    self.sendMsg(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"], connectionMsg)
 
-            try:
-                # Faz o parse dos dados para um comando valido
-                cmd = self.Command(self.Buffer)
-
-                # Se nao for uma mensagem propria (por causa do UDP) continua o processamento
-                if (cmd.PlayerID != self.ID):
-                    print ">> O jogador " + cmd.PlayerID + " solicitou o comando " + cmd.Cmd
-                    reply = ""
-
-                    if (cmd.Cmd == self._CMD_NOVA_CONEXAO):
-                        reply = self.GameLogic.CriaJogador(cmd.PlayerID, endereco[0])
-                    elif (cmd.Cmd == self._CMD_AJUDA):
-                        reply = self.TextoAjuda
-                    elif (cmd.Cmd == self._CMD_EXAMINAR):
-                        reply = self.GameLogic.Examina(cmd.PlayerID)
-                    elif (cmd.Cmd == self._CMD_MOVER):
-                        reply = self.GameLogic.Move(cmd.PlayerID, cmd.Parameters[0])
-                    elif (cmd.Cmd == self._CMD_INVENTORIO):
-                        reply = self.GameLogic.LeInventorio(cmd.PlayerID)
-                    elif (cmd.Cmd == self._CMD_USAR):
-                        if (len(cmd.Parameters) > 1):
-                            reply = self.GameLogic.UsaItem(cmd.PlayerID, cmd.Parameters[0], cmd.Parameters[1])
-                        else:
-                            reply = self.GameLogic.UsaItem(cmd.PlayerID, cmd.Parameters[0])
-                    else:
-                        reply = "Comando nao eh valido."
-
-                    self.sendMsg(reply, endereco[0])
-
-            except Exception as ex:
-                print "Ocorreu um erro ao executar o comando ", self.Buffer, "\n-> Erro:", ex
-                self.sendMsg("Ocorreu um erro ao executar o comando", endereco[0])
+                else:
+                    print "Comando nao implementado ainda"
+                    pass
 
 # --------------------------------------------------
 
@@ -141,9 +102,10 @@ if __name__ == "__main__":
             continue
 
     # Inicializa o servidor
-    servidor = Servidor(ip, 5005)
+    port = 5005
+    servidor = Server(None, ip, port, interface)
     print "Servidor MUD inicializado com sucesso em ", servidor.IP, " [", servidor.Port, "] "
 
     # Deixa o servidor rodando infinitamente
     while True:
-        servidor.atualiza()
+        servidor.run()
