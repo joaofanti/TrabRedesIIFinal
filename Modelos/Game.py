@@ -35,10 +35,10 @@ class Game:
 	"""
 	def CriaJogador(self, playerId, addr):
 		if (self.getPlayer(playerId) != None):
-			return "Jogador ja existe."
+			return "FAIL"
 		
 		self.Players.append(self.Player(playerId, addr, self.Map.showMap()))
-		return "Jogador criado na sala inicial."
+		return "OK"
 
 	"""
 		Examina a sala em que o jogador se encontra.

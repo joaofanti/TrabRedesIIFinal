@@ -21,6 +21,7 @@ class Client(UDPConnection):
         self.ID = _id
         self.ServerIP = serverIp
         self.ServerPort = 5005
+        self.Conectado = False
 
         thread.start_new_thread(self.readLoop, ()) # Inicia a thread de leitura
 
@@ -36,6 +37,10 @@ class Client(UDPConnection):
         while True:
             rcvMsg = self.readMsg()
             if (rcvMsg != None):
+                if ("OK" in rcvMsg["message"]):
+                    self.Conectado = True
+                else:
+                    self.Conectado = False
                 print '[SERVER]: {}'.format(rcvMsg["message"].split('|')[1])
 
 
@@ -60,13 +65,11 @@ if __name__ == "__main__":
         except:
             continue
 
-    # Coleta as informacoes do jogador
-    port = input("Insira a porta para ser utilizada no socket (sugestao: 5006): ")
-    playerName = raw_input("Insira o nome do jogador: ")
-    
     # Tenta conectar o jogador no servidor
     client = None
     while True:
+        port = input("Insira a porta para ser utilizada no socket (sugestao: 5006): ")
+        playerName = raw_input("Insira o nome do jogador: ")
         serverIp = raw_input("Insira o endereco IP do servidor: ")
 
         # Valida o endereco IP
@@ -79,12 +82,20 @@ if __name__ == "__main__":
         try:
             print 'Iniciando conexao com o servidor..\n'
             client = Client(None, ip, port, interface, playerName, serverIp)
+            for i in range(0, 10000000):
+                if client.Conectado:
+                    break
+            if not client.Conectado:
+                raise Exception("")
             break
         except Exception as ex:
             print ex
             print "Nao foi possivel estabelecer uma conexao com o servidor. Tente novamente.\n"
 
-    while True:
-        msg = raw_input()
-        msg = client.createMsg(client.ID, msg)
-        client.sendMsg(None, client.ServerIP, client.ServerPort, msg)
+
+
+    if client.Conectado:
+        while True:
+            msg = raw_input()
+            msg = client.createMsg(client.ID, msg)
+            client.sendMsg(None, client.ServerIP, client.ServerPort, msg)
