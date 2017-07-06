@@ -163,7 +163,7 @@ class Game:
 		playersNaSala = []
 		for x in range(0, len(self.Players)):
 			if(self.Players[x].Room == room):
-				playersNaSala.append((self.Players[x].Name, self.Players[x].Addr))
+				playersNaSala.append(self.Players[x].Addr)
 		return playersNaSala
 
 	"""

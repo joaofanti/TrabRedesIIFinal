@@ -95,50 +95,72 @@ class Server(UDPConnection):
             self.sendMsg(client.MAC, client.IP, client.PORT, msg)
 
     """
+        Envia mensagem para os clientes especificos.
+    """
+    def sendMsgToGroup(self, msg, clientsIps):
+        for clientIp in clientsIps:
+            for connectedClient in self.Clients:
+                if str(connectedClient.IP) == str(clientIp):
+                    self.sendMsg(connectedClient.MAC, connectedClient.IP, connectedClient.PORT, msg)
+            
+
+    """
         Escuta os dados recebidos pelo socket e executa a logica num laco infinito
     """
     def run(self):
     	while True:
             rcvMsg = self.readMsg()
             if (rcvMsg != None):
-                cmd = self.Command(rcvMsg["message"])
-                if (len(cmd.Parameters) > 0):
-                    print '>> O jogador {} solicitou o comando {} {}'.format(cmd.PlayerID, cmd.Action, ' '.join(cmd.Parameters))
-                else:
-                    print '>> O jogador {} solicitou o comando {}'.format(cmd.PlayerID, cmd.Action)
+                try:
+                    cmd = self.Command(rcvMsg["message"])
+                    if (len(cmd.Parameters) > 0):
+                        print '>> O jogador {} solicitou o comando {} {}'.format(cmd.PlayerID, cmd.Action, ' '.join(cmd.Parameters))
+                    else:
+                        print '>> O jogador {} solicitou o comando {}'.format(cmd.PlayerID, cmd.Action)
 
-                if (cmd.Action == self._CMD_CRIA_CONEXAO):
-                    msg = self.GameLogic.CriaJogador(cmd.PlayerID, rcvMsg["source_ip"])
-                    if (msg == "OK"):
-                        newClient = self.ConnectedClient(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"])
-                        self.Clients.append(newClient)
+                    if (cmd.Action == self._CMD_CRIA_CONEXAO):
+                        msg = self.GameLogic.CriaJogador(cmd.PlayerID, rcvMsg["source_ip"])
+                        if (msg == "OK"):
+                            newClient = self.ConnectedClient(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"])
+                            self.Clients.append(newClient)
 
-                        msg = self.createMsg(self.ID, 'OK\n')
-                        msg += 'Ola, {}\n'.format(cmd.PlayerID)
-                        msg += 'Para jogar, escreva o comando desejado e tecle [ENTER]\n'
-                        msg += 'Escreva o comando "Ajuda" para obter a lista completa de comandos.\n'
-                        msg += 'Escreva o comando "Sair" para sair do jogo.\n'
+                            msg = self.createMsg(self.ID, 'OK\n')
+                            msg += 'Ola, {}\n'.format(cmd.PlayerID)
+                            msg += 'Para jogar, escreva o comando desejado e tecle [ENTER]\n'
+                            msg += 'Escreva o comando "Ajuda" para obter a lista completa de comandos.\n'
+                            msg += 'Escreva o comando "Sair" para sair do jogo.\n'
+                            self.sendMsg(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"], msg)
+
+                        else:
+                            msg = self.createMsg(self.ID, 'Ja existe um usuario com o nickname {}'.format(cmd.PlayerID))
+                            self.sendMsg(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"], msg)
+
+                    elif (cmd.Action == self._CMD_AJUDA):
+                        msg = self.createMsg(self.ID, self.TextoAjuda)
                         self.sendMsg(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"], msg)
+                    
+                    elif (cmd.Action == self._CMD_EXAMINAR):
+                        msg = self.GameLogic.Examina(cmd.PlayerID)
+                        msg = self.createMsg(self.ID, msg)
+                        self.sendMsg(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"], msg)
+
+                    elif (cmd.Action == self._CMD_MOVER):
+                        playerRoom = self.GameLogic.getPlayer(cmd.PlayerID).Room
+                        clients = (self.GameLogic.getPlayersInRoom(playerRoom))
+                        msg = self.GameLogic.Move(cmd.PlayerID, cmd.Parameters[0])
+                        msg = self.createMsg(self.ID, msg)
+                        self.sendMsgToGroup(msg, clients)
+
+                    elif (cmd.Action == self._CMD_SAIR):
+                        msg = self.createMsg(self.ID, "O jogador {} saiu do jogo.".format(cmd.PlayerID))
+                        self.sendMsgToAll(msg)
+                        self.deleteClient(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"])
 
                     else:
-                        msg = self.createMsg(self.ID, 'Ja existe um usuario com o nickname {}'.format(cmd.PlayerID))
+                        msg = self.createMsg(self.ID, "Comando nao existente.")
                         self.sendMsg(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"], msg)
-
-                elif (cmd.Action == self._CMD_AJUDA):
-                    msg = self.createMsg(self.ID, self.TextoAjuda)
-                    self.sendMsg(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"], msg)
-
-                elif (cmd.Action == self._CMD_MOVER):
-                    msg = self.createMsg(self.ID, "O jogador {} moveu-se para '{}'".format(cmd.PlayerID, cmd.Parameters[0]))
-                    self.sendMsgToAll(connectionMsg)
-
-                elif (cmd.Action == self._CMD_SAIR):
-                    msg = self.createMsg(self.ID, "O jogador {} saiu do jogo.".format(cmd.PlayerID))
-                    self.sendMsgToAll(msg)
-                    self.deleteClient(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"])
-
-                else:
-                    msg = self.createMsg(self.ID, "Comando nao existente.")
+                except:
+                    msg = self.createMsg(self.ID, "Ocorreu um erro ao executar o comando.")
                     self.sendMsg(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"], msg)
 
 # --------------------------------------------------
