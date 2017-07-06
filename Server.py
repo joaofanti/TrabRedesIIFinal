@@ -15,7 +15,7 @@ class Server(UDPConnection):
 
     # Lista de comandos
     _CMD_CRIA_CONEXAO	= "CriaConexao"
-    _CMD_INVENTORIO 	= "Inventorio"
+    _CMD_INVENTARIO 	= "Inventario"
     _CMD_COCHICHAR		= "Cochichar"
     _CMD_EXAMINAR		= "Examinar"
     _CMD_LARGAR			= "Largar"
@@ -150,6 +150,28 @@ class Server(UDPConnection):
                         msg = self.GameLogic.Move(cmd.PlayerID, cmd.Parameters[0])
                         msg = self.createMsg(self.ID, msg)
                         self.sendMsgToGroup(msg, clients)
+
+                        # Examina e manda so pro usuario
+                        msg = self.GameLogic.Examina(cmd.PlayerID)
+                        msg = self.createMsg(self.ID, msg)
+                        self.sendMsg(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"], msg)
+
+                    elif (cmd.Action == self._CMD_USAR):
+                        if(len(cmd.Parameters) == 1):
+                            msg = self.GameLogic.UsaItem(cmd.PlayerID, cmd.Parameters[0], None)
+                            msg = self.createMsg(self.ID, msg)
+                            self.sendMsg(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"], msg)
+                        else:
+                            msg = self.GameLogic.UsaItem(cmd.PlayerID, cmd.Parameters[0], cmd.Parameters[1])
+                            msg = self.createMsg(self.ID, msg)
+                            playerRoom = self.GameLogic.getPlayer(cmd.PlayerID).Room
+                            clients = (self.GameLogic.getPlayersInRoom(playerRoom))
+                            self.sendMsgToGroup(msg, clients)
+
+                    elif (cmd.Action == self._CMD_INVENTARIO):
+                        msg = self.GameLogic.Inventario(cmd.PlayerID)
+                        msg = self.createMsg(self.ID, msg)
+                        self.sendMsg(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"], msg)
 
                     elif (cmd.Action == self._CMD_SAIR):
                         msg = self.createMsg(self.ID, "O jogador {} saiu do jogo.".format(cmd.PlayerID))

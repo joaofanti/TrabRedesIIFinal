@@ -91,8 +91,10 @@ class Game:
 
 		for item in player.Inventario:
 			if item.Name == itemName:
-				if ("Nota" in str(item.Name)) or item.Name == "Mapa":
-					print item.Description
+				if "Nota" in str(item.Name):
+					return item.Description
+				elif item.Name == "Mapa":
+					return "O jogador {} esta aqui: {}\n{}".format(playerId, salaAtual, item.Description)
 				elif ("Chave" in str(item.Name)):
 					for x in range(0, len(salaAtual.Doors)):
 						salaAtual.Doors[x].opened = True
