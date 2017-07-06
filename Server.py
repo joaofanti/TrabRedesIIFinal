@@ -102,7 +102,15 @@ class Server(UDPConnection):
             for connectedClient in self.Clients:
                 if str(connectedClient.IP) == str(clientIp):
                     self.sendMsg(connectedClient.MAC, connectedClient.IP, connectedClient.PORT, msg)
-            
+    
+    """
+        Pega um cliente pelo IP.
+    """
+    def getConnectedClient(self, ip):
+        for connectedClient in self.Clients:
+            if connectedClient.IP == ip:
+                return connectedClient
+        return None
 
     """
         Escuta os dados recebidos pelo socket e executa a logica num laco infinito
@@ -133,6 +141,26 @@ class Server(UDPConnection):
 
                         else:
                             msg = self.createMsg(self.ID, 'Ja existe um usuario com o nickname {}'.format(cmd.PlayerID))
+                            self.sendMsg(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"], msg)
+
+                    elif (cmd.Action == self._CMD_COCHICHAR):
+                        text = cmd.Parameters[0]
+                        target = cmd.Parameters[1]
+
+                        currPlayer = self.GameLogic.getPlayer(cmd.PlayerID)
+                        destPlayer = self.GameLogic.getPlayer(target)
+
+                        if (currPlayer.Room == destPlayer.Room):
+                            # Envia mensagem para o destino 
+                            msg = self.createMsg(cmd.PlayerID, text)
+                            client = self.getConnectedClient(destPlayer.Addr)
+                            self.sendMsg(client.MAC, client.IP, client.PORT, msg)
+
+                            # Da o retorno para o usuario que enviou a mensagem
+                            msg = self.createMsg(self.ID, "A mensagem foi enviada para {}".format(destPlayer.Name))
+                            self.sendMsg(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"], msg)
+                        else:
+                            msg = self.createMsg(self.ID, "O jogador {} nao esta na mesma sala que voce.".format(target))
                             self.sendMsg(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"], msg)
 
                     elif (cmd.Action == self._CMD_AJUDA):
