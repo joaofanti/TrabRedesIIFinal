@@ -80,11 +80,12 @@ class Game:
 		for i in range(0, ln):
 			result += player.Inventario[i].Name
 			if (i + 1 != ln):
-				result += " | "
+				result += " ; "
 		return result
 
 	def UsaItem(self, playerId, itemName, target = None):
 		player = self.getPlayer(playerId)
+		abriuPorta = False
 		if(player == None):
 			return "Player nao encontrado"
 		salaAtual = self.Map.getRoom(player.Room)
@@ -94,11 +95,25 @@ class Game:
 				if "Nota" in str(item.Name):
 					return item.Description
 				elif item.Name == "Mapa":
-					return "O jogador {} esta aqui: {}\n{}".format(playerId, salaAtual, item.Description)
+					return item.Description
+				elif item.Name == "ObjetoFinal":
+					if salaAtual.ID == 1:
+						return "Fim"
+					else:
+						return "Voce precisa estar na sala inicial para utilizar este objeto"
 				elif ("Chave" in str(item.Name)):
-					for x in range(0, len(salaAtual.Doors)):
-						salaAtual.Doors[x].opened = True
-						return "Portas da sala "+str(salaAtual.ID)+" foram abertas" 
+					if target == None:
+						return "Escolha uma porta para abrir"
+					else:
+						for x in range(0, len(salaAtual.Doors)):
+							if str(x) == target:
+								abriuPorta = True
+								self.Map.getRoom(player.Room).Doors[x].OpenDoor()
+						if(abriuPorta == True):
+							return "Porta "+target+" foi aberta"
+						else:
+							return "Nao foi possivel abrir a porta "+target
+					return "Portas da sala "+str(salaAtual.ID)+" foram abertas" 
 				else:
 					return "Item nao existente no inventario"
 

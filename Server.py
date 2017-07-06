@@ -187,9 +187,13 @@ class Server(UDPConnection):
                     elif (cmd.Action == self._CMD_USAR):
                         if(len(cmd.Parameters) == 1):
                             msg = self.GameLogic.UsaItem(cmd.PlayerID, cmd.Parameters[0], None)
+                            if(msg == "Fim"):
+                            	jogoEncerrado = True
+                            	jogadorVencedor = self.GameLogic.getPlayer(cmd.PlayerID)
+                            	break	
                             msg = self.createMsg(self.ID, msg)
                             self.sendMsg(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"], msg)
-                        else:
+                        elif(len(cmd.Parameters) > 1):
                             msg = self.GameLogic.UsaItem(cmd.PlayerID, cmd.Parameters[0], cmd.Parameters[1])
                             msg = self.createMsg(self.ID, msg)
                             playerRoom = self.GameLogic.getPlayer(cmd.PlayerID).Room
@@ -200,6 +204,20 @@ class Server(UDPConnection):
                         msg = self.GameLogic.Inventario(cmd.PlayerID)
                         msg = self.createMsg(self.ID, msg)
                         self.sendMsg(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"], msg)
+
+                    elif (cmd.Action == self._CMD_PEGAR):
+                        msg = self.GameLogic.Pegar(cmd.PlayerID, cmd.Parameters[0])
+                        msg = self.createMsg(self.ID, msg)
+                        playerRoom = self.GameLogic.getPlayer(cmd.PlayerID).Room
+                        clients = (self.GameLogic.getPlayersInRoom(playerRoom))
+                        self.sendMsgToGroup(msg, clients)
+
+                    elif (cmd.Action == self._CMD_LARGAR):
+                        msg = self.GameLogic.Largar(cmd.PlayerID, cmd.Parameters[0])
+                        msg = self.createMsg(self.ID, msg)
+                        playerRoom = self.GameLogic.getPlayer(cmd.PlayerID).Room
+                        clients = (self.GameLogic.getPlayersInRoom(playerRoom))
+                        self.sendMsgToGroup(msg, clients)
 
                     elif (cmd.Action == self._CMD_SAIR):
                         msg = self.createMsg(self.ID, "O jogador {} saiu do jogo.".format(cmd.PlayerID))
@@ -212,6 +230,9 @@ class Server(UDPConnection):
                 except:
                     msg = self.createMsg(self.ID, "Ocorreu um erro ao executar o comando.")
                     self.sendMsg(rcvMsg["source_mac"], rcvMsg["source_ip"], rcvMsg["source_port"], msg)
+        if jogoEncerrado:
+			msg = self.createMsg(self.ID, "O jogador "+jogadorVencedor.Name+" concluiu o jogo com sucesso!")
+			self.sendMsgToAll(msg)
 
 # --------------------------------------------------
 
@@ -239,5 +260,5 @@ if __name__ == "__main__":
     print "Servidor MUD inicializado com sucesso em ", servidor.IP, " [", servidor.Port, "] "
 
     # Deixa o servidor rodando infinitamente
-    while True:
-        servidor.run()
+    #while True:
+    servidor.run()
